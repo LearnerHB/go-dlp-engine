@@ -18,26 +18,26 @@ jobs:
       - name: Build linux/amd64 binary
         run: GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dlp-engine .
 
-      - name: Upload binary to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          source: "dlp-engine"
-          target: "~/go-dlp-engine/"
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Restart service via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            set -e
-            chmod +x ~/go-dlp-engine/dlp-engine
-            pm2 delete dlp-engine 2>/dev/null || true
-            pm2 start ~/go-dlp-engine/dlp-engine --name dlp-engine
-            pm2 save
-            echo ">>> dlp-engine deployed."
+      - name: Upload binary
+        run: |
+          rsync -e "ssh -i ~/.ssh/deploy_key" dlp-engine \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/go-dlp-engine/dlp-engine
+
+      - name: Restart service
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
+              set -e
+              chmod +x ~/go-dlp-engine/dlp-engine
+              pm2 delete dlp-engine 2>/dev/null || true
+              pm2 start ~/go-dlp-engine/dlp-engine --name dlp-engine
+              pm2 save
+              echo ">>> dlp-engine deployed."
+            '
