@@ -1,0 +1,10 @@
+# Build artifacts
+build/
+dist/
+dlp-engine
+dlp-engine-*
+
+# Go
+*.test
+*.out
+vendor/
