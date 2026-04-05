@@ -35,7 +35,8 @@ jobs:
       - name: Upload binary
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
-            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "mkdir -p /home/ec2-user/go-dlp-engine"
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            "mkdir -p /home/ec2-user/go-dlp-engine && pm2 stop dlp-engine 2>/dev/null || true"
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             dlp-engine \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/ec2-user/go-dlp-engine/dlp-engine
@@ -46,8 +47,7 @@ jobs:
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} '
               set -e
               chmod +x /home/ec2-user/go-dlp-engine/dlp-engine
-              pm2 delete dlp-engine 2>/dev/null || true
-              pm2 start /home/ec2-user/go-dlp-engine/dlp-engine --name dlp-engine
+              pm2 restart dlp-engine 2>/dev/null || pm2 start /home/ec2-user/go-dlp-engine/dlp-engine --name dlp-engine
               pm2 save
               echo ">>> dlp-engine deployed."
             '
