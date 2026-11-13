@@ -87,13 +87,14 @@ func main() {
 	if port == "" {
 		port = "8082"
 	}
+	addr := os.Getenv("DLP_ENGINE_HOST") + ":" + port
 
 	http.HandleFunc("/scan", handleScan)
 	http.HandleFunc("/desensitize", handleDesensitize)
 	http.HandleFunc("/health", handleHealth)
 
-	log.Printf("Go DLP Engine listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	log.Printf("Go DLP Engine listening on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
 }
